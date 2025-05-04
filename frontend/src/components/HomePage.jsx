@@ -13,7 +13,7 @@ function HomePage() {
               <Link to="/about" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
                 About
               </Link>
-              <a href="#" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">Login</a>
+              <a href="/auth/register" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">Login</a>
             </div>
           </div>
         </div>
