@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function AuthPage() {
   const [activeTab, setActiveTab] = useState('login');
+  const navigate = useNavigate();
   
   // Function to handle redirect to Products page
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Redirect to Products page
-    window.location.href = "/products";
+    // Redirect to Products page using React Router
+    navigate('/products');
   };
 
   return (
