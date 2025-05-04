@@ -14,7 +14,7 @@ function App() {
         <Route path="/orders" element={<OrderManagementPage />} />
         <Route path="/order/confirmation/:orderId" element={<OrderConfirmationPage />} />
 
-        </Routes>
+      </Routes>
     </Router>
   );
 }
