@@ -2,15 +2,18 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import HomePage from './components/HomePage';
+import AuthPage from './components/AuthPage';
 import AboutPage from './components/AboutPage';
 import OrderManagementPage from './components/OrderManagementPage';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
 import OrderShippedPage from './components/OrderShippedPage';
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/orders" element={<OrderManagementPage />} />
         <Route path="/order/confirmation/:orderId" element={<OrderConfirmationPage />} />

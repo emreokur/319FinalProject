@@ -13,7 +13,9 @@ function HomePage() {
               <Link to="/about" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
                 About
               </Link>
-              <a href="#" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">Login</a>
+              <Link to="/auth" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">
+                Login
+              </Link>
             </div>
           </div>
         </div>
@@ -35,12 +37,12 @@ function HomePage() {
                 optimizing your camera's potential and maximizing creative potential.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <a
-                  href="/auth/register"
+                <Link 
+                  to="/auth" 
                   className="bg-white text-indigo-900 px-6 py-3 rounded-lg font-medium text-lg hover:bg-gray-100 transition-colors"
                 >
                   Get Started
-                </a>
+                </Link>
                 <a
                   href="#about"
                   className="bg-transparent border-2 border-white px-6 py-3 rounded-lg font-medium text-lg hover:bg-white/10 transition-colors"
@@ -148,12 +150,12 @@ function HomePage() {
             Join thousands of satisfied photographers who have enhanced their
             photography and improved their creative potential using TheOnlyGoodCameraStore.
           </p>
-          <a
-            href="/auth/register"
+          <Link 
+            to="/auth/register" 
             className="bg-white text-indigo-900 px-8 py-4 rounded-lg font-medium text-lg hover:bg-gray-100 transition-colors inline-block"
           >
             Get Started Today
-          </a>
+          </Link>
         </div>
       </section>
 
