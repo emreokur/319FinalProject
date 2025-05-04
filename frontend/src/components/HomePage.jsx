@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 function HomePage() {
   return (
@@ -9,16 +10,18 @@ function HomePage() {
           <div className="flex justify-between items-center py-4">
             <div className="font-bold text-xl">TheOnlyGoodCameraStore</div>
             <div className="flex space-x-4 items-center">
-              <a href="#" className="text-white hover:text-gray-200 transition-colors px-4 py-2">About</a>
+              <Link to="/about" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
+                About
+              </Link>
               <a href="#" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">Login</a>
             </div>
           </div>
         </div>
       </nav>
-      
+
       {/* Add padding to push content below fixed navbar */}
       <div className="pt-16"></div>
-      
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-blue-900 to-indigo-900 py-20 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
@@ -28,18 +31,18 @@ function HomePage() {
                 Revolutionizing Camera Experience
               </h1>
               <p className="text-xl md:text-2xl">
-                TheOnlyGoodCameraStore connects photographers to premium camera equipment, 
+                TheOnlyGoodCameraStore connects photographers to premium camera equipment,
                 optimizing your camera's potential and maximizing creative potential.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <a 
-                  href="/auth/register" 
+                <a
+                  href="/auth/register"
                   className="bg-white text-indigo-900 px-6 py-3 rounded-lg font-medium text-lg hover:bg-gray-100 transition-colors"
                 >
                   Get Started
                 </a>
-                <a 
-                  href="#about" 
+                <a
+                  href="#about"
                   className="bg-transparent border-2 border-white px-6 py-3 rounded-lg font-medium text-lg hover:bg-white/10 transition-colors"
                 >
                   Learn More
@@ -52,8 +55,8 @@ function HomePage() {
                   <div className="text-center p-8">
                     <h3 className="text-2xl font-bold mb-4">Featured Cameras</h3>
                     <p className="text-lg mb-6">Explore our premium cameras from top-rated brands.</p>
-                    <a 
-                      href="/products" 
+                    <a
+                      href="/products"
                       className="inline-block bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                     >
                       Browse Inventory
@@ -98,11 +101,11 @@ function HomePage() {
               About TheOnlyGoodCameraStore
             </h2>
             <p className="text-xl text-gray-600">
-              TheOnlyGoodCameraStore is revolutionizing how photographers access premium camera equipment 
+              TheOnlyGoodCameraStore is revolutionizing how photographers access premium camera equipment
               to improve their photography and maximize creative potential.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-gray-50 p-8 rounded-xl">
               <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
@@ -142,11 +145,11 @@ function HomePage() {
             Ready to Upgrade Your Photography?
           </h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
-            Join thousands of satisfied photographers who have enhanced their 
+            Join thousands of satisfied photographers who have enhanced their
             photography and improved their creative potential using TheOnlyGoodCameraStore.
           </p>
-          <a 
-            href="/auth/register" 
+          <a
+            href="/auth/register"
             className="bg-white text-indigo-900 px-8 py-4 rounded-lg font-medium text-lg hover:bg-gray-100 transition-colors inline-block"
           >
             Get Started Today
@@ -173,7 +176,7 @@ function HomePage() {
                 </ul>
               </div>
             </div>
-            
+
             <div className="mt-6 md:mt-0">
               <h4 className="text-lg font-semibold mb-4">Connect With Us</h4>
               <div className="flex space-x-4">
