@@ -12,7 +12,9 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/orders" element={<OrderManagementPage />} />
-        </Routes>
+        <Route path="/order/confirmation/:orderId" element={<OrderConfirmationPage />} />
+
+      </Routes>
     </Router>
   );
 }
