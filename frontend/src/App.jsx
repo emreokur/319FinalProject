@@ -11,6 +11,7 @@ import CheckoutPage from './components/CheckoutPage';
 import OrderManagementPage from './components/OrderManagementPage';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
 import OrderShippedPage from './components/OrderShippedPage';
+import NotFound from './components/NotFound';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/orders" element={<OrderManagementPage />} />
         <Route path="/order/confirmation/:orderId" element={<OrderConfirmationPage />} />
         <Route path="/order/shipped/:orderId" element={<OrderShippedPage />} />
+        <Route path="/notFound" element={<NotFound />} />
       </Routes>
     </Router>
   );
