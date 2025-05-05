@@ -8,10 +8,11 @@ import ProductsPage from './components/ProductPage';
 import ProductDetail from './components/ProductDetail';
 import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
-import OrderManagementPage from './components/OrderManagementPage';
+import OrderManagementPage from './components/OrderManagementPageCustomer';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
 import OrderShippedPage from './components/OrderShippedPage';
 import NotFound from './components/NotFound';
+import OrderManagementPageClient from './components/OrderManagementPageClient';
 
 function App() {
   return (
@@ -28,7 +29,8 @@ function App() {
         <Route path="/order/confirmation/:orderId" element={<OrderConfirmationPage />} />
         <Route path="/order/shipped/:orderId" element={<OrderShippedPage />} />
         <Route path="/notFound" element={<NotFound />} />
-      </Routes>
+        <Route path="/orders/client" element={<OrderManagementPageClient />} />
+        </Routes>
     </Router>
   );
 }
