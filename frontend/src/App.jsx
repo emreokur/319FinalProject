@@ -6,6 +6,8 @@ import AuthPage from './components/AuthPage';
 import AboutPage from './components/AboutPage';
 import ProductsPage from './components/ProductPage';
 import ProductDetail from './components/ProductDetail';
+import CartPage from './components/CartPage';
+import CheckoutPage from './components/CheckoutPage';
 import OrderManagementPage from './components/OrderManagementPage';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
 import OrderShippedPage from './components/OrderShippedPage';
@@ -19,6 +21,8 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrderManagementPage />} />
         <Route path="/order/confirmation/:orderId" element={<OrderConfirmationPage />} />
         <Route path="/order/shipped/:orderId" element={<OrderShippedPage />} />
