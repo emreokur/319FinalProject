@@ -14,12 +14,12 @@ function OrderManagementPage() {
       customerName: 'John Pork',
       customerEmail: 'jp@email.com',
       status: 'Placed',
-      total: 999.99,
+      total: 1499.99,
       items: [
         {
-          name: 'Sony Camera',
+          name: 'Professional DSLR Camera',
           quantity: 1,
-          price: 999.99,
+          price: 1499.99,
         },
       ],
     },
