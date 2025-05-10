@@ -13,6 +13,7 @@ import OrderConfirmationPage from './components/OrderConfirmationPage';
 import OrderShippedPage from './components/OrderShippedPage';
 import NotFound from './components/NotFound';
 import OrderManagementPageClient from './components/OrderManagementPageClient';
+import AccountPage from './components/AccountPage';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/order/shipped/:orderId" element={<OrderShippedPage />} />
         <Route path="/notFound" element={<NotFound />} />
         <Route path="/orders/client" element={<OrderManagementPageClient />} />
+        <Route path="/account" element={<AccountPage />} />
         </Routes>
     </Router>
   );

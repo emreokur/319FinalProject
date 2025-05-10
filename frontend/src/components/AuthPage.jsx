@@ -3,13 +3,96 @@ import { useNavigate } from 'react-router-dom';
 
 function AuthPage() {
   const [activeTab, setActiveTab] = useState('login');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   
-  // Function to handle redirect to Products page
-  const handleSubmit = (e) => {
+  const BASE_URL = 'http://localhost:3000';
+  
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Redirect to Products page using React Router
-    navigate('/products');
+    setIsLoading(true);
+    setError('');
+    
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+      
+      // Store user in localStorage
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Redirect to Products page
+      navigate('/products');
+    } catch (error) {
+      console.error('Login error details:', error);
+      setError(error.message || 'Failed to login. Please check your network connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
+    const username = e.target.name.value;
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+    const confirmPassword = e.target['confirm-password'].value;
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      console.log('Attempting to register user:', { username, email });
+      
+      const response = await fetch(`${BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, email, password }),
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+      
+      console.log('Registration successful:', data);
+      
+      // Auto-login after registration
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Redirect to Products page
+      navigate('/products');
+    } catch (error) {
+      console.error('Registration error details:', error);
+      setError(error.message || 'Failed to register. Please check your network connection.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,6 +122,13 @@ function AuthPage() {
           </button>
         </div>
 
+        {/* Error message display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+
         {/* Login Form */}
         {activeTab === 'login' && (
           <div>
@@ -48,7 +138,7 @@ function AuthPage() {
               </h2>
             </div>
             
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <form className="mt-8 space-y-6" onSubmit={handleLogin}>
               <div className="-space-y-px rounded-md shadow-sm">
                 <div>
                   <label htmlFor="email-address" className="sr-only">
@@ -103,9 +193,10 @@ function AuthPage() {
               <div>
                 <button
                   type="submit"
-                  className="group relative flex w-full justify-center rounded-md bg-indigo-600 py-3 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  disabled={isLoading}
+                  className="group relative flex w-full justify-center rounded-md bg-indigo-600 py-3 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400"
                 >
-                  Sign in
+                  {isLoading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
             </form>
@@ -121,7 +212,7 @@ function AuthPage() {
               </h2>
             </div>
             
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <form className="mt-8 space-y-6" onSubmit={handleRegister}>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -180,28 +271,15 @@ function AuthPage() {
                     placeholder="Confirm your password"
                   />
                 </div>
-                
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                    Account Type
-                  </label>
-                  <select
-                    id="role"
-                    name="role"
-                    className="mt-1 block w-full rounded-md border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
-                  >
-                    <option value="BUYER">Buyer</option>
-                    <option value="SELLER">Seller</option>
-                  </select>
-                </div>
               </div>
 
               <div>
                 <button
                   type="submit"
-                  className="group relative flex w-full justify-center rounded-md bg-indigo-600 py-3 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  disabled={isLoading}
+                  className="group relative flex w-full justify-center rounded-md bg-indigo-600 py-3 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400"
                 >
-                  Create account
+                  {isLoading ? 'Creating account...' : 'Create account'}
                 </button>
               </div>
               
