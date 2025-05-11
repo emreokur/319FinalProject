@@ -2,109 +2,57 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
 
-// Using the same mock products data
-const MOCK_PRODUCTS = [
-  {
-    id: "1",
-    name: "Professional DSLR Camera",
-    description: "High-end professional DSLR camera with exceptional image quality and versatile shooting capabilities. Features include a 45.7MP full-frame sensor, advanced autofocus system with 153 focus points, 4K UHD video recording, and weather-sealed construction for durability in various shooting conditions. Comes with a versatile 24-70mm f/2.8 lens that's perfect for everything from portraits to landscapes.",
-    price: 1499.99,
-    quantity: 5,
-    images: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop",
-    sellerId: "seller1",
-    createdAt: new Date("2023-05-15"),
-    updatedAt: new Date("2023-06-01"),
-    seller: {
-      name: "Premium Camera Shop"
-    },
-    specs: {
-      sensorType: "Full-frame CMOS",
-      resolution: "45.7 megapixels",
-      isoRange: "64-25,600 (expandable to 102,400)",
-      focusPoints: "153",
-      videoResolution: "4K Ultra HD",
-      batteryLife: "1,840 shots per charge"
-    }
-  },
-  {
-    id: "2",
-    name: "Mirrorless Camera Kit",
-    description: "Compact mirrorless camera with 24MP sensor, 4K video recording, and versatile lens compatibility. This lightweight system delivers exceptional image quality while being significantly more portable than traditional DSLRs. The electronic viewfinder provides real-time exposure preview, and the 5-axis image stabilization ensures sharp images even in low light conditions.",
-    price: 899.99,
-    quantity: 12,
-    images: "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1000&auto=format&fit=crop",
-    sellerId: "seller2",
-    createdAt: new Date("2023-06-20"),
-    updatedAt: new Date("2023-06-25"),
-    seller: {
-      name: "Camera World"
-    },
-    specs: {
-      sensorType: "APS-C CMOS",
-      resolution: "24.2 megapixels",
-      isoRange: "100-32,000",
-      focusPoints: "425",
-      videoResolution: "4K at 30fps",
-      batteryLife: "710 shots per charge"
-    }
-  },
-  {
-    id: "3",
-    name: "Ultra-Wide Angle Lens",
-    description: "Professional ultra-wide angle lens with f/2.8 aperture, perfect for landscape and architectural photography. The constant f/2.8 aperture allows for excellent low-light performance, while the premium optics minimize distortion typically associated with ultra-wide lenses. Includes a specialized lens hood to reduce flare and built-in weather sealing for shooting in challenging conditions.",
-    price: 649.99,
-    quantity: 3,
-    images: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Canon_17-40_f4_L_lens.jpg/1200px-Canon_17-40_f4_L_lens.jpg",
-    sellerId: "seller1",
-    createdAt: new Date("2023-07-10"),
-    updatedAt: new Date("2023-07-15"),
-    seller: {
-      name: "Premium Camera Shop"
-    },
-    specs: {
-      focalLength: "14-24mm",
-      maxAperture: "f/2.8",
-      minAperture: "f/22",
-      filterSize: "82mm",
-      weight: "950g",
-      construction: "17 elements in 12 groups"
-    }
-  }
-];
-
 function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
 
   useEffect(() => {
-    // Simulating API fetch with a timeout
-    setTimeout(() => {
-      const foundProduct = MOCK_PRODUCTS.find(p => p.id === id);
-      
-      if (foundProduct) {
-        setProduct(foundProduct);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
         
-        // Get recommendations (products from the same seller excluding current product)
-        const recs = MOCK_PRODUCTS.filter(p => 
-          p.id !== id && p.sellerId === foundProduct.sellerId
-        );
+        // Parse the ID as an integer for comparison
+        const numericId = parseInt(id);
+        console.log('Fetching product with ID:', numericId);
         
-        // If not enough recommendations from same seller, add others
-        if (recs.length < 2) {
-          const otherRecs = MOCK_PRODUCTS.filter(p => 
-            p.id !== id && !recs.some(r => r.id === p.id)
-          );
-          setRecommendations([...recs, ...otherRecs].slice(0, 3));
-        } else {
-          setRecommendations(recs);
+        // Fetch the specific product
+        const response = await fetch(`http://localhost:3000/api/products/${id}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch product');
         }
+        
+        const data = await response.json();
+        console.log('Product data received:', data.product);
+        setProduct(data.product);
+        
+        // Fetch recommendations (all products to filter from)
+        const allProductsResponse = await fetch('http://localhost:3000/api/products');
+        
+        if (allProductsResponse.ok) {
+          const allData = await allProductsResponse.json();
+          // Get recommendations (excluding current product)
+          // Convert id to number for comparison since product.id is now an integer
+          const recs = allData.products.filter(p => p.id !== numericId);
+          setRecommendations(recs.slice(0, 3)); // Just take up to 3 recommendations
+        } else {
+          console.warn('Failed to fetch recommendations');
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching product details:', error);
+        setError(error.message || 'Failed to load product details. Please try again later.');
+        setLoading(false);
       }
-      
-      setLoading(false);
-    }, 500);
+    };
+
+    fetchProduct();
   }, [id]);
 
   const handleAddToCart = () => {
@@ -126,15 +74,15 @@ function ProductDetail() {
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <>
         <Navbar />
         <div className="pt-16"></div>
         <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100 max-w-7xl mx-auto my-10">
-          <h3 className="text-lg font-medium text-gray-900">Product not found</h3>
+          <h3 className="text-lg font-medium text-gray-900">{error || 'Product not found'}</h3>
           <p className="mt-1 text-gray-600">
-            The product you're looking for doesn't exist or has been removed.
+            {error ? 'Please try again later.' : 'The product you\'re looking for doesn\'t exist or has been removed.'}
           </p>
           <Link 
             to="/products"
@@ -187,7 +135,7 @@ function ProductDetail() {
               
               <div className="mt-2 flex items-center">
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Seller:</span> {product.seller.name}
+                  <span className="font-medium">Seller:</span> {product.seller?.name || 'Unknown Seller'}
                 </p>
                 <p className="ml-4 text-sm text-gray-600">
                   <span className="font-medium">Availability:</span> {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of stock'}
@@ -203,17 +151,19 @@ function ProductDetail() {
               </p>
               
               {/* Specifications */}
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Specifications</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {product.specs && Object.entries(product.specs).map(([key, value]) => (
-                    <div key={key} className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
-                      <p className="text-sm text-gray-800">{value}</p>
-                    </div>
-                  ))}
+              {product.specs && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Specifications</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(product.specs).map(([key, value]) => (
+                      <div key={key} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                        <p className="text-sm text-gray-800">{value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Add to Cart Button */}
               <div className="mt-8 flex space-x-4">
@@ -237,45 +187,45 @@ function ProductDetail() {
         </div>
 
         {/* Product Recommendations */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">You may also like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {recommendations.map((rec) => (
-              <div key={rec.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow border border-gray-100">
-                <div className="relative h-48 w-full">
-                  <img 
-                    src={rec.images} 
-                    alt={rec.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-5">
-                  <Link to={`/products/${rec.id}`}>
-                    <h3 className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">
-                      {rec.name}
-                    </h3>
-                  </Link>
-                  <p className="mt-3 text-sm text-gray-700 line-clamp-2">
-                    {rec.description}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-lg font-bold text-indigo-700">
-                      ${rec.price.toFixed(2)}
-                    </span>
+        {recommendations.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">You may also like</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {recommendations.map((rec) => (
+                <div key={rec.id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow border border-gray-100">
+                  <div className="relative h-48 w-full">
+                    <img 
+                      src={rec.images} 
+                      alt={rec.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <div className="mt-4">
-                    <Link 
-                      to={`/products/${rec.id}`}
-                      className="block w-full text-center bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition-colors font-medium"
-                    >
-                      View Details
+                  <div className="p-5">
+                    <Link to={`/products/${rec.id}`} className="block">
+                      <h3 className="text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors">
+                        {rec.name}
+                      </h3>
                     </Link>
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                      {rec.description}
+                    </p>
+                    <div className="mt-4 flex justify-between items-center">
+                      <span className="text-lg font-bold text-indigo-700">
+                        ${rec.price.toFixed(2)}
+                      </span>
+                      <Link 
+                        to={`/products/${rec.id}`}
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                      >
+                        View Details
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

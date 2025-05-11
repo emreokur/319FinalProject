@@ -39,8 +39,12 @@ function AuthPage() {
       // Store user in localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirect to Products page
-      navigate('/products');
+      // Redirect based on user role
+      if (data.user && data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/products');
+      }
     } catch (error) {
       console.error('Login error details:', error);
       setError(error.message || 'Failed to login. Please check your network connection.');
@@ -88,8 +92,12 @@ function AuthPage() {
       // Auto-login after registration
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirect to Products page
-      navigate('/products');
+      // Redirect based on user role (if admin role was set during registration)
+      if (data.user && data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/products');
+      }
     } catch (error) {
       console.error('Registration error details:', error);
       setError(error.message || 'Failed to register. Please check your network connection.');
