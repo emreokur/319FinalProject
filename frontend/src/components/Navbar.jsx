@@ -1,10 +1,20 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Navbar() {
-  // Simulate client-side login state
-  const isClient = typeof window !== 'undefined';
-  const isLoggedIn = true; 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    setIsLoggedIn(!!user);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    navigate('/auth');
+  };
 
   return (
     <nav className="bg-blue-900 text-white fixed w-full z-10">
@@ -15,17 +25,25 @@ function Navbar() {
             <Link to="/about" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
               About
             </Link>
-            {isClient && isLoggedIn ? (
+            <Link to="/products" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
+              Products
+            </Link>
+            {isLoggedIn ? (
               <>
                 <Link to="/orders" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
                   Orders
                 </Link>
-                <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 transition-colors">
+                <Link to="/account" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
+                  My Account
+                </Link>
+                <button 
+                  onClick={handleLogout}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 transition-colors">
                   Logout
                 </button>
               </>
             ) : (
-              <Link to="/auth/register" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">
+              <Link to="/auth" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">
                 Login
               </Link>
             )}
