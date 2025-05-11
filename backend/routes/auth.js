@@ -22,6 +22,7 @@ router.post('/register', async (req, res) => {
       username: username,
       email: email,
       password: password,
+      role: 'user',
       createdAt: new Date()
     };
 
@@ -56,6 +57,14 @@ router.post('/login', async (req, res) => {
 
     if (user.password !== password) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.role) {
+      await usersCollection.updateOne(
+        { _id: user._id },
+        { $set: { role: 'user' } }
+      );
+      user.role = 'user';
     }
 
     const { password: _, ...userWithoutPassword } = user;
