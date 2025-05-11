@@ -3,16 +3,29 @@ import { Link, useNavigate } from 'react-router-dom';
 
 function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
-    setIsLoggedIn(!!user);
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      setIsLoggedIn(true);
+      try {
+        const userData = JSON.parse(userStr);
+        setIsAdmin(userData && userData.role === 'admin');
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    } else {
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+    }
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
+    setIsAdmin(false);
     navigate('/auth');
   };
 
@@ -30,6 +43,11 @@ function Navbar() {
             </Link>
             {isLoggedIn ? (
               <>
+                {isAdmin && (
+                  <Link to="/admin" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
+                    Admin Dashboard
+                  </Link>
+                )}
                 <Link to="/orders" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
                   Orders
                 </Link>

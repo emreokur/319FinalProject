@@ -1,57 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 
-// Sample mock products data
-const MOCK_PRODUCTS = [
-  {
-    id: "1",
-    name: "Professional DSLR Camera",
-    description: "High-end professional DSLR camera with exceptional image quality and versatile shooting capabilities.",
-    price: 1499.99,
-    quantity: 5,
-    images: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop",
-    sellerId: "seller1",
-    createdAt: new Date("2023-05-15"),
-    updatedAt: new Date("2023-06-01"),
-    seller: {
-      name: "Premium Camera Shop"
-    }
-  },
-  {
-    id: "2",
-    name: "Mirrorless Camera Kit",
-    description: "Compact mirrorless camera with 24MP sensor, 4K video recording, and versatile lens compatibility.",
-    price: 899.99,
-    quantity: 12,
-    images: "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1000&auto=format&fit=crop",
-    sellerId: "seller2",
-    createdAt: new Date("2023-06-20"),
-    updatedAt: new Date("2023-06-25"),
-    seller: {
-      name: "Camera World"
-    }
-  },
-  {
-    id: "3",
-    name: "Ultra-Wide Angle Lens",
-    description: "Professional ultra-wide angle lens with f/2.8 aperture, perfect for landscape and architectural photography.",
-    price: 649.99,
-    quantity: 3,
-    images: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Canon_17-40_f4_L_lens.jpg/1200px-Canon_17-40_f4_L_lens.jpg",
-    sellerId: "seller1",
-    createdAt: new Date("2023-07-10"),
-    updatedAt: new Date("2023-07-15"),
-    seller: {
-      name: "Premium Camera Shop"
-    }
-  }
-];
-
 function ProductsPage() {
-  const [products] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3000/api/products');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        
+        const data = await response.json();
+        setProducts(data.products);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setError('Failed to load products. Please try again later.');
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleSortChange = (e) => {
     setSortBy(e.target.value);
@@ -60,7 +38,7 @@ function ProductsPage() {
   const sortedProducts = [...products].sort((a, b) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime();
       case "price-low":
         return a.price - b.price;
       case "price-high":
@@ -130,6 +108,13 @@ function ProductsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading products...</p>
           </div>
+        ) : error ? (
+          <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-lg font-medium text-red-600">{error}</h3>
+            <p className="mt-1 text-gray-600">
+              Please try refreshing the page or check back later.
+            </p>
+          </div>
         ) : (
           <>
             {/* Products Grid */}
@@ -164,7 +149,7 @@ function ProductsPage() {
                         </h3>
                       </Link>
                       <p className="text-sm text-gray-600 mt-1">
-                        <span className="font-medium">Seller:</span> {product.seller.name}
+                        <span className="font-medium">Seller:</span> {product.seller?.name || 'Unknown Seller'}
                       </p>
                       <p className="mt-3 text-sm text-gray-700 line-clamp-2">
                         {product.description}
