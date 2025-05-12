@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './Navbar';
-// import { fetchShippedOrderById } from './services/orderService'; // Backend logic (commented out)
 import { useParams } from 'react-router-dom';
 
 function OrderShippedPage() {

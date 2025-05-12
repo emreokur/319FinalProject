@@ -8,7 +8,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('products');
-  const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
+  const [formMode, setFormMode] = useState('add');
   const [questions, setQuestions] = useState([]);
   const [loadingQ, setLoadingQ] = useState(false);
   const [errorQ, setErrorQ] = useState(null);
@@ -65,7 +65,6 @@ function AdminDashboard() {
       setLoadingOrders(false);
     }
   };
-
 
   // Check if user is admin on component mount
   useEffect(() => {

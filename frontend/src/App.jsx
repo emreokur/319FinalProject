@@ -15,6 +15,7 @@ import NotFound from './components/NotFound';
 import OrderManagementPageClient from './components/OrderManagementPageClient';
 import AccountPage from './components/AccountPage';
 import AdminDashboard from './components/AdminDashboard';
+import SalesAnalyticsPage from './components/SalesAnalyticsPage';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
         <Route path="/orders/client" element={<OrderManagementPageClient />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/analytics" element={<SalesAnalyticsPage />} />
         </Routes>
     </Router>
   );
