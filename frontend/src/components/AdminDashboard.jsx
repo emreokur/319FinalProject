@@ -12,7 +12,25 @@ function AdminDashboard() {
   const [questions, setQuestions] = useState([]);
   const [loadingQ, setLoadingQ] = useState(false);
   const [errorQ, setErrorQ] = useState(null);
+  const [adminOrders, setAdminOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [errorOrders, setErrorOrders] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expanded, setExpanded] = useState(new Set());
 
+  const filteredOrders = adminOrders.filter(o =>
+    o._id.includes(searchTerm) ||
+    o.shipping.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+
+  function toggleExpand(id) {
+    setExpanded(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  }
   const [currentProduct, setCurrentProduct] = useState({
     name: '',
     description: '',
@@ -20,6 +38,33 @@ function AdminDashboard() {
     quantity: '',
     images: ''
   });
+
+  useEffect(() => {
+    if (activeSection === 'orders') {
+      fetchAdminOrders();
+    }
+  }, [activeSection]);
+
+  const fetchAdminOrders = async () => {
+    setLoadingOrders(true);
+    setErrorOrders(null);
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const res = await fetch('http://localhost:3000/api/orders/admin', {
+        headers: {
+          'UserId': user._id || user.email,
+          'UserRole': user.role || ''
+        }
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setAdminOrders(await res.json());
+    } catch (e) {
+      console.error(e);
+      setErrorOrders(e.message);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
 
 
   // Check if user is admin on component mount
@@ -280,8 +325,8 @@ function AdminDashboard() {
           <div className="flex border-b border-gray-200">
             <button
               className={`py-4 px-6 font-medium text-sm ${activeSection === 'products'
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                ? 'border-b-2 border-indigo-600 text-indigo-600'
+                : 'text-gray-500 hover:text-gray-700'
                 }`}
               onClick={() => setActiveSection('products')}
             >
@@ -289,8 +334,8 @@ function AdminDashboard() {
             </button>
             <button
               className={`py-4 px-6 font-medium text-sm ${activeSection === 'orders'
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                ? 'border-b-2 border-indigo-600 text-indigo-600'
+                : 'text-gray-500 hover:text-gray-700'
                 }`}
               onClick={() => setActiveSection('orders')}
             >
@@ -301,9 +346,9 @@ function AdminDashboard() {
               onClick={() => setActiveSection('questions')}
               className={`py-4 px-6 font-medium text-sm ${activeSection === 'questions'
 
-                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+                ? 'border-b-2 border-indigo-600 text-indigo-600'
 
-                  : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 hover:text-gray-700'
 
                 }`}
 
@@ -519,15 +564,148 @@ function AdminDashboard() {
 
         {activeSection === 'orders' && (
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Order Management
-            </h2>
-            <p className="text-gray-500">Order management functionality will be implemented in future updates.</p>
+            <h2 className="text-xl font-semibold mb-4">Order Management</h2>
+
+            <div className="mb-4 flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="Search by Order ID or Email…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="border px-3 py-2 rounded-md flex-1"
+              />
+              <button
+                onClick={fetchAdminOrders}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {loadingOrders ? (
+              <p>Loading orders…</p>
+            ) : errorOrders ? (
+              <p className="text-red-600">{errorOrders}</p>
+            ) : adminOrders.length === 0 ? (
+              <p className="text-gray-500">No orders found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {[
+                        'ID', 'Customer', 'Total',
+                        'Received', 'Packed', 'Shipped', 'Delivered', 'Actions'
+                      ].map(h => (
+                        <th
+                          key={h}
+                          className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredOrders.map(order => {
+                      const { _id, shipping, total, status, items } = order;
+                      const user = JSON.parse(localStorage.getItem('user') || '{}');
+                      const headers = { 'UserId': user._id || user.email, 'UserRole': user.role || '' };
+
+                      const toggle = async (field, current) => {
+                        await fetch(
+                          `http://localhost:3000/api/orders/admin/${_id}/status`,
+                          {
+                            method: 'PATCH',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'UserId': user._id,
+                              'UserRole': user.role
+                            },
+                            body: JSON.stringify({ status: field, completed: !current })
+                          }
+                        );
+
+                        fetchAdminOrders();
+                      };
+
+                      const del = async () => {
+                        if (!confirm('Really delete this order?')) return;
+                        await fetch(
+                          `http://localhost:3000/api/orders/admin/${_id}`,
+                          { method: 'DELETE', headers }
+                        );
+                        fetchAdminOrders();
+                      };
+
+                      return (
+                        <React.Fragment key={_id}>
+                          <tr>
+                            <td className="px-4 py-2">
+                              <button onClick={() => toggleExpand(_id)} className="mr-2 text-lg">
+                                {expanded.has(_id) ? '▼' : '▶'}
+                              </button>
+                              {_id}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{shipping.email}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">
+                              ${total.toFixed(2)}
+                            </td>
+                            {['received_order', 'packed', 'shipped', 'delivered'].map(f => (
+                              <td key={f} className="px-4 py-2">
+                                <input
+                                  type="checkbox"
+                                  checked={status[f].completed}
+                                  onChange={() => toggle(f, status[f].completed)}
+                                />
+                              </td>
+                            ))}
+                            <td className="px-4 py-2 text-sm">
+                              <button
+                                onClick={del}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+
+                          {expanded.has(_id) && (
+                            <tr className="bg-gray-50">
+                              <td colSpan={8} className="px-8 pb-4">
+                                <strong>Items:</strong>
+                                <ul className="mt-2 space-y-1">
+                                  {items.map((it, i) => (
+                                    <li key={i} className="flex justify-between">
+                                      <img
+                                        src={it.image || '/path/to/default-image.jpg'}
+                                        alt={it.name}
+                                        className="w-12 h-12 object-cover rounded"
+                                      />
+                                      <span>{it.name} × {it.quantity}</span>
+
+                                      <span>
+                                        {(it.subtotal ?? it.price * it.quantity * 1.07).toLocaleString(undefined, {
+                                          style: 'currency',
+                                          currency: 'USD',
+                                        })}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
 
-{activeSection === 'questions' && (
+        {activeSection === 'questions' && (
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-xl font-semibold mb-4">Submitted Questions</h2>
 

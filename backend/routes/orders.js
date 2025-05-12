@@ -9,6 +9,85 @@ const isAuthenticated = (req, res, next) => {
   next();
 };
 
+
+
+const isAdmin = (req, res, next) => {
+  if (req.headers.userrole !== 'admin') {
+    return res.status(403).json({ message: 'Admin only' });
+  }
+  next();
+};
+
+router.get(
+  '/admin',
+  isAuthenticated,
+  isAdmin,
+  async (req, res, next) => {
+    const db = req.app.locals.db.db('cameraStore');
+    try {
+      const all = await db
+        .collection('orders')
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+      res.json(all);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// PATCH /api/orders/admin/:id/status
+// → toggle one of the status flags (received_order, packed, shipped, delivered)
+router.patch(
+  '/admin/:id/status',
+  isAuthenticated,
+  isAdmin,
+  async (req, res, next) => {
+    const { status, completed } = req.body;
+    if (!['received_order','packed','shipped','delivered'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status field' });
+    }
+    try {
+      const db = req.app.locals.db.db('cameraStore');
+      const update = { [`status.${status}.completed`]: completed };
+      if (completed) update[`status.${status}.at`] = new Date();
+      const result = await db.collection('orders').updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: update }
+      );
+      if (result.modifiedCount === 0) {
+        return res.status(404).json({ message: 'Order not found or no change' });
+      }
+      res.json({ message: 'Status updated' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// DELETE /api/orders/admin/:id
+// → completely remove an order
+router.delete(
+  '/admin/:id',
+  isAuthenticated,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const db = req.app.locals.db.db('cameraStore');
+      const result = await db.collection('orders').deleteOne({ 
+        _id: new ObjectId(req.params.id) 
+      });
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      res.json({ message: 'Order deleted' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 router.post('/', isAuthenticated, async (req, res, next) => {
   const db = req.app.locals.db.db('cameraStore');
 
@@ -130,6 +209,8 @@ router.patch('/:id/return', isAuthenticated, async (req, res, next) => {
     next(err);
   }
 });
+
+
 
 
 module.exports = router;
