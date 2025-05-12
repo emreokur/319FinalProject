@@ -1,4 +1,3 @@
-// backend/routes/orders.js
 const express     = require('express');
 const { ObjectId } = require('mongodb');
 const router      = express.Router();
@@ -23,9 +22,6 @@ router.post('/', isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: 'Your cart is empty' });
     }
 
-    // (Optional) You could validate stock here…
-    
-    // 1) Create the order
     const order = {
       userId: req.userId,
       shipping: { fullName, email, address, city, state, zipCode, country },
@@ -75,5 +71,65 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
     next(err);
   }
 });
+
+
+// List all orders for current user
+router.get('/', isAuthenticated, async (req, res, next) => {
+  try {
+    const db = req.app.locals.db.db('cameraStore');
+    const orders = await db
+      .collection('orders')
+      .find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json(orders);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Cancel an order (only if not packed yet)
+router.patch('/:id/cancel', isAuthenticated, async (req, res, next) => {
+  try {
+    const db = req.app.locals.db.db('cameraStore');
+    const result = await db.collection('orders').updateOne(
+      {
+        _id: new ObjectId(req.params.id),
+        userId: req.userId,
+        'status.packed.completed': false
+      },
+      { $set: { 'status.cancelled': { completed: true, at: new Date() } } }
+    );
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ message: 'Cannot cancel: already packed or not found.' });
+    }
+    res.json({ message: 'Order cancelled' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Request return (only if shipped and not already requested)
+router.patch('/:id/return', isAuthenticated, async (req, res, next) => {
+  try {
+    const db = req.app.locals.db.db('cameraStore');
+    const result = await db.collection('orders').updateOne(
+      {
+        _id: new ObjectId(req.params.id),
+        userId: req.userId,
+        'status.shipped.completed': true,
+        'status.return_requested': { $exists: false }
+      },
+      { $set: { 'status.return_requested': { requested: true, at: new Date() } } }
+    );
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ message: 'Cannot request return.' });
+    }
+    res.json({ message: 'Return requested' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 module.exports = router;
