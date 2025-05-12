@@ -1,6 +1,6 @@
-const express     = require('express');
+const express = require('express');
 const { ObjectId } = require('mongodb');
-const router      = express.Router();
+const router = express.Router();
 
 const isAuthenticated = (req, res, next) => {
   const userId = req.headers.userid;
@@ -8,8 +8,6 @@ const isAuthenticated = (req, res, next) => {
   req.userId = userId;
   next();
 };
-
-
 
 const isAdmin = (req, res, next) => {
   if (req.headers.userrole !== 'admin') {
@@ -45,7 +43,7 @@ router.patch(
   isAdmin,
   async (req, res, next) => {
     const { status, completed } = req.body;
-    if (!['received_order','packed','shipped','delivered'].includes(status)) {
+    if (!['received_order', 'packed', 'shipped', 'delivered'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status field' });
     }
     try {
@@ -75,8 +73,8 @@ router.delete(
   async (req, res, next) => {
     try {
       const db = req.app.locals.db.db('cameraStore');
-      const result = await db.collection('orders').deleteOne({ 
-        _id: new ObjectId(req.params.id) 
+      const result = await db.collection('orders').deleteOne({
+        _id: new ObjectId(req.params.id)
       });
       if (result.deletedCount === 0) {
         return res.status(404).json({ message: 'Order not found' });
@@ -110,10 +108,10 @@ router.post('/', isAuthenticated, async (req, res, next) => {
       shippingCost,
       total,
       status: {
-        received_order: { completed: true,  at: new Date() },
-        packed:         { completed: false, at: null },
-        shipped:        { completed: false, at: null },
-        delivered:      { completed: false, at: null },
+        received_order: { completed: true, at: new Date() },
+        packed: { completed: false, at: null },
+        shipped: { completed: false, at: null },
+        delivered: { completed: false, at: null },
       },
       createdAt: new Date()
     };
@@ -141,7 +139,7 @@ router.get('/:id', isAuthenticated, async (req, res, next) => {
   try {
     const db = req.app.locals.db.db('cameraStore');
     const order = await db.collection('orders').findOne({
-      _id:    new ObjectId(req.params.id),
+      _id: new ObjectId(req.params.id),
       userId: req.userId
     });
     if (!order) return res.status(404).json({ message: 'Order not found' });
