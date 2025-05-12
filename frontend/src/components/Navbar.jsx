@@ -49,7 +49,11 @@ export default function Navbar() {
             )}
 
             {isAdmin && (
-              <Link to="/admin" className="nav-link">Admin&nbsp;Dashboard</Link>
+              <>
+                <Link to="/admin" className="nav-link">Admin&nbsp;Dashboard</Link>
+                <Link to="/shipping" className="px-4 py-2 hover:text-gray-200">Shipping Estimate</Link>
+              </>
+
             )}
 
             {isLoggedIn && (

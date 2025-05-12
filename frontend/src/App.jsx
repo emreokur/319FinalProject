@@ -15,11 +15,12 @@ import NotFound from './components/NotFound';
 import OrderManagementPageClient from './components/OrderManagementPageClient';
 import AccountPage from './components/AccountPage';
 import AdminDashboard from './components/AdminDashboard';
-
+import ShippingEstimatePage from './components/ShippingEstimatePage';
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/shipping" element={<ShippingEstimatePage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/about" element={<AboutPage />} />
@@ -34,7 +35,7 @@ function App() {
         <Route path="/orders/client" element={<OrderManagementPageClient />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        </Routes>
+      </Routes>
     </Router>
   );
 }
