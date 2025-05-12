@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+import AdminEmailPage from './components/AdminEmailPage';
 import HomePage from './components/HomePage';
 import AuthPage from './components/AuthPage';
 import AboutPage from './components/AboutPage';
@@ -22,6 +23,7 @@ function App() {
   return (
     <Router>
       <Routes>
+      <Route path="/admin/email" element={<AdminEmailPage />} />
         <Route path="/shipping" element={<ShippingEstimatePage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage />} />
