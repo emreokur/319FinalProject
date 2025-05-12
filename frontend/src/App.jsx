@@ -15,12 +15,14 @@ import NotFound from './components/NotFound';
 import OrderManagementPageClient from './components/OrderManagementPageClient';
 import AccountPage from './components/AccountPage';
 import AdminDashboard from './components/AdminDashboard';
-import SalesAnalyticsPage from './components/SalesAnalyticsPage';
+import ShippingEstimatePage from './components/ShippingEstimatePage';
 
+import SalesAnalyticsPage from './components/SalesAnalyticsPage';
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/shipping" element={<ShippingEstimatePage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/about" element={<AboutPage />} />
@@ -36,7 +38,7 @@ function App() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/analytics" element={<SalesAnalyticsPage />} />
-        </Routes>
+      </Routes>
     </Router>
   );
 }
