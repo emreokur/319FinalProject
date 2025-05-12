@@ -9,6 +9,10 @@ function AdminDashboard() {
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState('products');
   const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
+  const [questions, setQuestions] = useState([]);
+  const [loadingQ, setLoadingQ] = useState(false);
+  const [errorQ, setErrorQ] = useState(null);
+
   const [currentProduct, setCurrentProduct] = useState({
     name: '',
     description: '',
@@ -16,6 +20,7 @@ function AdminDashboard() {
     quantity: '',
     images: ''
   });
+
 
   // Check if user is admin on component mount
   useEffect(() => {
@@ -27,15 +32,22 @@ function AdminDashboard() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    if (activeSection === 'questions') {
+      fetchQuestions();
+    }
+  }, [activeSection]);
+
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:3000/api/products');
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
-      
+
       const data = await response.json();
       setProducts(data.products || []);
       setLoading(false);
@@ -46,6 +58,59 @@ function AdminDashboard() {
     }
   };
 
+  const fetchQuestions = async () => {
+    try {
+      setLoadingQ(true);
+      setErrorQ(null);
+      const res = await fetch('http://localhost:3000/api/questions');
+      if (!res.ok) throw new Error('Failed to fetch questions');
+      const data = await res.json();
+      // only show unresolved
+      setQuestions(data.filter(q => !q.resolved));
+    } catch (err) {
+      console.error(err);
+      setErrorQ('Failed to load questions');
+    } finally {
+      setLoadingQ(false);
+    }
+  };
+
+
+  async function handleResolve(id) {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/questions/${id}/resolve`,
+        { method: 'PATCH' }
+      );
+      if (!res.ok) throw new Error('Resolve failed');
+      // mark it in-place instead of removing
+      setQuestions(qs =>
+        qs.map(q =>
+          q._id === id ? { ...q, resolved: true } : q
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  }
+
+
+  const handleDeleteQ = async (id) => {
+    if (!window.confirm('Really delete this question?')) return;
+    try {
+      const res = await fetch(`http://localhost:3000/api/questions/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      setQuestions(prev => prev.filter(q => q._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentProduct({
@@ -54,9 +119,16 @@ function AdminDashboard() {
     });
   };
 
+  useEffect(() => {
+    if (activeSection === 'products') {
+      fetchProducts();
+    }
+  }, [activeSection]);
+
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Convert price and quantity to numbers before sending to API
       const productToAdd = {
@@ -72,11 +144,11 @@ function AdminDashboard() {
         },
         body: JSON.stringify(productToAdd),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to add product');
       }
-      
+
       // Reset form and refresh products list
       setCurrentProduct({
         name: '',
@@ -85,10 +157,10 @@ function AdminDashboard() {
         quantity: '',
         images: ''
       });
-      
+
       fetchProducts();
       alert('Product added successfully!');
-      
+
     } catch (error) {
       console.error('Error adding product:', error);
       alert('Failed to add product. Please try again.');
@@ -97,11 +169,11 @@ function AdminDashboard() {
 
   const handleEditProduct = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Make sure the ID is an integer both in the URL and request body
       const productId = parseInt(currentProduct.id);
-      
+
       // Prepare the product data with proper type conversions
       const productToUpdate = {
         ...currentProduct,
@@ -119,12 +191,12 @@ function AdminDashboard() {
         },
         body: JSON.stringify(productToUpdate),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update product');
       }
-      
+
       // Reset form and refresh products list
       setCurrentProduct({
         name: '',
@@ -133,11 +205,11 @@ function AdminDashboard() {
         quantity: '',
         images: ''
       });
-      
+
       setFormMode('add');
       fetchProducts();
       alert('Product updated successfully!');
-      
+
     } catch (error) {
       console.error('Error updating product:', error);
       alert(`Failed to update product: ${error.message}`);
@@ -151,14 +223,14 @@ function AdminDashboard() {
         const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
           method: 'DELETE',
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to delete product');
         }
-        
+
         fetchProducts();
         alert('Product deleted successfully!');
-        
+
       } catch (error) {
         console.error('Error deleting product:', error);
         alert('Failed to delete product. Please try again.');
@@ -177,7 +249,7 @@ function AdminDashboard() {
       price: product.price ? product.price.toString() : '',
       quantity: product.quantity ? product.quantity.toString() : ''
     });
-    
+
     setFormMode('edit');
     window.scrollTo(0, 0);
   };
@@ -199,43 +271,57 @@ function AdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="pt-16"></div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
-        
+
         {/* Dashboard tabs */}
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg mb-8">
           <div className="flex border-b border-gray-200">
             <button
-              className={`py-4 px-6 font-medium text-sm ${
-                activeSection === 'products' 
-                  ? 'border-b-2 border-indigo-600 text-indigo-600' 
+              className={`py-4 px-6 font-medium text-sm ${activeSection === 'products'
+                  ? 'border-b-2 border-indigo-600 text-indigo-600'
                   : 'text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
               onClick={() => setActiveSection('products')}
             >
               Modify Products
             </button>
             <button
-              className={`py-4 px-6 font-medium text-sm ${
-                activeSection === 'orders' 
-                  ? 'border-b-2 border-indigo-600 text-indigo-600' 
+              className={`py-4 px-6 font-medium text-sm ${activeSection === 'orders'
+                  ? 'border-b-2 border-indigo-600 text-indigo-600'
                   : 'text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
               onClick={() => setActiveSection('orders')}
             >
               Orders
             </button>
+
+            <button
+              onClick={() => setActiveSection('questions')}
+              className={`py-4 px-6 font-medium text-sm ${activeSection === 'questions'
+
+                  ? 'border-b-2 border-indigo-600 text-indigo-600'
+
+                  : 'text-gray-500 hover:text-gray-700'
+
+                }`}
+
+            >
+              Questions
+
+            </button>
+
           </div>
         </div>
-        
+
         {activeSection === 'products' && (
           <div className="space-y-8">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 {formMode === 'add' ? 'Add New Product' : 'Edit Product'}
               </h2>
-              
+
               <form onSubmit={formMode === 'add' ? handleAddProduct : handleEditProduct} className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -251,7 +337,7 @@ function AdminDashboard() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                     Description
@@ -266,7 +352,7 @@ function AdminDashboard() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3"
                   ></textarea>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="price" className="block text-sm font-medium text-gray-700">
@@ -290,7 +376,7 @@ function AdminDashboard() {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
                       Quantity
@@ -308,7 +394,7 @@ function AdminDashboard() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label htmlFor="images" className="block text-sm font-medium text-gray-700">
                     Image URL
@@ -323,7 +409,7 @@ function AdminDashboard() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3"
                   />
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <button
                     type="submit"
@@ -331,7 +417,7 @@ function AdminDashboard() {
                   >
                     {formMode === 'add' ? 'Add Product' : 'Update Product'}
                   </button>
-                  
+
                   {formMode === 'edit' && (
                     <button
                       type="button"
@@ -353,12 +439,12 @@ function AdminDashboard() {
                 </div>
               </form>
             </div>
-            
+
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Product List
               </h2>
-              
+
               {error ? (
                 <div className="text-red-500 mb-4">{error}</div>
               ) : products.length === 0 ? (
@@ -388,10 +474,10 @@ function AdminDashboard() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className="h-10 w-10 flex-shrink-0">
-                                <img 
-                                  className="h-10 w-10 rounded-full object-cover" 
-                                  src={product.images} 
-                                  alt={product.name} 
+                                <img
+                                  className="h-10 w-10 rounded-full object-cover"
+                                  src={product.images}
+                                  alt={product.name}
                                 />
                               </div>
                               <div className="ml-4">
@@ -430,7 +516,7 @@ function AdminDashboard() {
             </div>
           </div>
         )}
-        
+
         {activeSection === 'orders' && (
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -439,6 +525,52 @@ function AdminDashboard() {
             <p className="text-gray-500">Order management functionality will be implemented in future updates.</p>
           </div>
         )}
+
+
+{activeSection === 'questions' && (
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Submitted Questions</h2>
+
+            {loadingQ ? (
+              <p>Loading questions…</p>
+            ) : errorQ ? (
+              <p className="text-red-600">{errorQ}</p>
+            ) : questions.length === 0 ? (
+              <p className="text-gray-500">No questions yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {questions.map(q => (
+                  <li key={q._id} className="border p-4 rounded-lg">
+                    <p className="font-medium text-gray-800 mb-1">{q.question}</p>
+                    <p className="text-sm text-gray-600 mb-3">{q.email}</p>
+                    <div className="flex items-center gap-2">
+                      {q.resolved ? (
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                          Resolved
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleResolve(q._id)}
+                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Mark Resolved
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteQ(q._id)}
+                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+
       </div>
     </div>
   );
