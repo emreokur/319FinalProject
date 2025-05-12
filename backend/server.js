@@ -14,7 +14,7 @@ app.use(cors({
   origin: ['http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'UserId', 'userid']
+  allowedHeaders: ['Content-Type', 'Authorization', 'UserId', 'userid', 'UserRole', 'userrole']
 }));
 
 // Generic route handler for /api/{apiName}
@@ -29,16 +29,16 @@ async function startServer() {
   try {
     dbClient = new MongoClient(mongoUrl);
     await dbClient.connect();
-    
+
     console.log(`Connected to MongoDB database: ${dbName}`);
-    
+
     app.locals.db = dbClient;
 
     fs.readdirSync(routesPath).forEach(file => {
       if (file.endsWith('.js')) {
         const routeName = path.basename(file, '.js');
         const routeModule = require(path.join(routesPath, file));
-        
+
         if (routeModule && (typeof routeModule === 'function' || typeof routeModule.router === 'function')) {
           app.use(`/api/${routeName}`, routeModule);
           console.log(`Loaded route: /api/${routeName}`);
