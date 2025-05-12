@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from './Navbar';
 import Asray from '../assets/asray.JPG';
 import Emre from '../assets/emre.jpg';
+import AskQuestion from './AskQuestion';
 
 function AboutPage() {
   return (
@@ -55,6 +56,8 @@ function AboutPage() {
             </div>
           </div>
         </section>
+      <AskQuestion />
+
       </main>
     </>
   );
