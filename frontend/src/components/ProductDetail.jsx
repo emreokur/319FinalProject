@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
 
+const BASE_URL = 'http://localhost:3000';
+
 function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -9,18 +11,24 @@ function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
+  const [user, setUser] = useState(null);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMessage, setCartMessage] = useState(null);
 
   useEffect(() => {
+    // Check if user is logged in
+    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+    if (loggedInUser) {
+      setUser(loggedInUser);
+    }
+
     const fetchProduct = async () => {
       try {
         setLoading(true);
         
-        // Parse the ID as an integer for comparison
         const numericId = parseInt(id);
-        console.log('Fetching product with ID:', numericId);
         
-        // Fetch the specific product
-        const response = await fetch(`http://localhost:3000/api/products/${id}`);
+        const response = await fetch(`${BASE_URL}/api/products/${id}`);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -28,18 +36,15 @@ function ProductDetail() {
         }
         
         const data = await response.json();
-        console.log('Product data received:', data.product);
         setProduct(data.product);
         
-        // Fetch recommendations (all products to filter from)
-        const allProductsResponse = await fetch('http://localhost:3000/api/products');
+        const allProductsResponse = await fetch(`${BASE_URL}/api/products`);
         
+        // Recommendation stuff
         if (allProductsResponse.ok) {
           const allData = await allProductsResponse.json();
-          // Get recommendations (excluding current product)
-          // Convert id to number for comparison since product.id is now an integer
           const recs = allData.products.filter(p => p.id !== numericId);
-          setRecommendations(recs.slice(0, 3)); // Just take up to 3 recommendations
+          setRecommendations(recs.slice(0, 3));
         } else {
           console.warn('Failed to fetch recommendations');
         }
@@ -55,10 +60,90 @@ function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  const handleAddToCart = () => {
-    // In a real app, this would add the product to the cart
-    // For now, just navigate to a placeholder cart page
-    navigate('/cart');
+  const handleAddToCart = async () => {
+    if (!user) {
+      // Redirect to login if user is not authenticated
+      navigate('/auth');
+      return;
+    }
+
+    if (!product || product.quantity <= 0) {
+      setCartMessage({
+        type: 'error',
+        text: 'This product is out of stock.'
+      });
+      return;
+    }
+
+    setAddingToCart(true);
+    setCartMessage(null);
+
+    const userId = user._id || user.id || user.email;
+
+    try {
+      const cartResponse = await fetch(`${BASE_URL}/api/cart`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': userId
+        }
+      });
+
+      if (!cartResponse.ok) {
+        throw new Error('Failed to check current cart');
+      }
+
+      const currentCart = await cartResponse.json();
+      const existingItem = currentCart.items?.find(item => parseInt(item.productId) === product.id);
+      const currentQuantity = existingItem ? existingItem.quantity : 0;
+
+      if (currentQuantity + 1 > product.quantity) {
+        setCartMessage({
+          type: 'error',
+          text: `Sorry, you cannot add more. Only ${product.quantity} in stock and you already have ${currentQuantity} in your cart.`
+        });
+        setAddingToCart(false);
+        return;
+      }
+
+      const response = await fetch(`${BASE_URL}/api/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': userId
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          image: product.images
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add item to cart');
+      }
+
+      // Show success message
+      setCartMessage({
+        type: 'success',
+        text: 'Item added to cart successfully!'
+      });
+
+      setTimeout(() => {
+        navigate('/cart');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setCartMessage({
+        type: 'error',
+        text: 'Failed to add item to cart. Please try again.'
+      });
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   if (loading) {
@@ -117,6 +202,13 @@ function ProductDetail() {
           </ol>
         </nav>
 
+        {/* Cart Message */}
+        {cartMessage && (
+          <div className={`mb-6 p-4 rounded-md ${cartMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            {cartMessage.text}
+          </div>
+        )}
+
         {/* Product Details */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
           <div className="grid md:grid-cols-2 gap-8 p-6">
@@ -169,19 +261,19 @@ function ProductDetail() {
               <div className="mt-8 flex space-x-4">
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-                  disabled={product.quantity <= 0}
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-indigo-300"
+                  disabled={product.quantity <= 0 || addingToCart}
                 >
-                  Add to Cart
-                </button>
-                <button
-                  className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                  {addingToCart ? 'Adding...' : 'Add to Cart'}
                 </button>
               </div>
+              
+              {/* Login message if not logged in */}
+              {!user && (
+                <p className="mt-4 text-sm text-gray-600">
+                  Please <Link to="/auth" className="text-indigo-600 font-medium">sign in</Link> to add items to your cart
+                </p>
+              )}
             </div>
           </div>
         </div>

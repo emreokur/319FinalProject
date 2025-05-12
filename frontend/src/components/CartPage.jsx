@@ -2,47 +2,164 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 
-// Mock cart items
-const MOCK_CART_ITEMS = [
-  {
-    id: "1",
-    productId: "1",
-    name: "Professional DSLR Camera",
-    price: 1499.99,
-    quantity: 1,
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop",
-    seller: "Premium Camera Shop"
-  }
-];
+// API Base URL
+const BASE_URL = 'http://localhost:3000';
 
 function CartPage() {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState(MOCK_CART_ITEMS);
+  const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [stockLimits, setStockLimits] = useState({});
+  const [updateMessage, setUpdateMessage] = useState(null);
 
   useEffect(() => {
-    // Simulate loading cart items
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
-  }, []);
+    // Get user from localStorage
+    const loggedInUser = JSON.parse(localStorage.getItem('user'));
+    if (!loggedInUser) {
+      // Redirect to login if not authenticated
+      navigate('/auth');
+      return;
+    }
+    setUser(loggedInUser);
 
-  const updateQuantity = (itemId, newQuantity) => {
-    if (newQuantity < 1) return;
-    
-    setCartItems(prevItems => 
-      prevItems.map(item => 
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    // Fetch cart data
+    fetchCart(loggedInUser);
+  }, [navigate]);
+
+  // Fetch stock information for all cart items
+  const fetchStockInfo = async (items) => {
+    try {
+      const stockData = {};
+      
+      for (const item of items) {
+        const response = await fetch(`${BASE_URL}/api/products/${item.productId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          stockData[item.productId] = data.product?.quantity || 0;
+        } else {
+          console.error(`Failed to fetch stock for product ${item.productId}`);
+          stockData[item.productId] = 0;
+        }
+      }
+      
+      setStockLimits(stockData);
+      return stockData;
+    } catch (err) {
+      console.error('Error fetching stock info:', err);
+      return {};
+    }
   };
 
-  const removeItem = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
+  const fetchCart = async (loggedInUser) => {
+    setLoading(true);
+    setError(null);
+    
+    const userId = loggedInUser._id || loggedInUser.id || loggedInUser.email;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/cart`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': userId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch cart');
+      }
+
+      const cartData = await response.json();
+      
+      const items = cartData.items || [];
+      setCartItems(items);
+      setTotal(cartData.total || 0);
+      
+      // Fetch stock information for all cart items
+      if (items.length > 0) {
+        fetchStockInfo(items);
+      }
+    } catch (err) {
+      console.error('Error fetching cart:', err);
+      setError('Failed to load your cart. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateQuantity = async (productId, newQuantity) => {
+    if (newQuantity < 1 || !user) return;
+    
+    if (stockLimits[productId] !== undefined && newQuantity > stockLimits[productId]) {
+      setUpdateMessage({
+        type: 'error',
+        text: `Cannot add more items. Only ${stockLimits[productId]} in stock.`
+      });
+      
+      setTimeout(() => setUpdateMessage(null), 3000);
+      return;
+    }
+    
+    const userId = user._id || user.id || user.email;
+    
+    try {
+      setUpdateMessage(null);
+      
+      const response = await fetch(`${BASE_URL}/api/cart/items/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': userId
+        },
+        body: JSON.stringify({ quantity: newQuantity })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update quantity');
+      }
+
+      const updatedCart = await response.json();
+      setCartItems(updatedCart.items || []);
+      setTotal(updatedCart.total || 0);
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+      setError('Failed to update quantity. Please try again.');
+    }
+  };
+
+  const removeItem = async (productId) => {
+    if (!user) return;
+    
+    const userId = user._id || user.id || user.email;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/cart/items/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': userId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove item');
+      }
+
+      const updatedCart = await response.json();
+      setCartItems(updatedCart.items || []);
+      setTotal(updatedCart.total || 0);
+    } catch (err) {
+      console.error('Error removing item:', err);
+      setError('Failed to remove item. Please try again.');
+    }
   };
 
   const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return total;
   };
 
   const calculateTax = () => {
@@ -66,6 +183,22 @@ function CartPage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-6">Shopping Cart</h1>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6">
+            {error}
+          </div>
+        )}
+
+        {updateMessage && (
+          <div className={`mb-6 p-4 rounded-md ${
+            updateMessage.type === 'success' 
+              ? 'bg-green-50 text-green-700 border border-green-200' 
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}>
+            {updateMessage.text}
+          </div>
+        )}
         
         {loading ? (
           <div className="flex justify-center items-center py-16">
@@ -95,7 +228,7 @@ function CartPage() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                 <ul className="divide-y divide-gray-200">
                   {cartItems.map(item => (
-                    <li key={item.id} className="p-6">
+                    <li key={item.productId} className="p-6">
                       <div className="flex flex-col sm:flex-row">
                         <div className="sm:flex-shrink-0 w-full sm:w-24 h-24 mb-4 sm:mb-0">
                           <img 
@@ -110,7 +243,7 @@ function CartPage() {
                               {item.name}
                             </Link>
                             <button 
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item.productId)}
                               className="text-gray-500 hover:text-red-600"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -118,26 +251,39 @@ function CartPage() {
                               </svg>
                             </button>
                           </div>
-                          <p className="text-sm text-gray-600">Seller: {item.seller}</p>
-                          <div className="mt-2 flex-1"></div>
+                          <div className="mt-2 flex-1">
+                            {stockLimits[item.productId] !== undefined && (
+                              <p className="text-sm">
+                                {stockLimits[item.productId] > 0 
+                                  ? `${stockLimits[item.productId]} in stock` 
+                                  : <span className="text-red-500">Out of stock</span>}
+                              </p>
+                            )}
+                          </div>
                           <div className="mt-4 flex justify-between items-center">
                             <div className="flex items-center">
                               <button 
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                                 className="bg-gray-100 text-gray-600 px-2 py-1 rounded-l-md hover:bg-gray-200"
                               >
                                 -
                               </button>
                               <span className="bg-gray-50 px-4 py-1">{item.quantity}</span>
                               <button 
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="bg-gray-100 text-gray-600 px-2 py-1 rounded-r-md hover:bg-gray-200"
+                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                                className={`bg-gray-100 text-gray-600 px-2 py-1 rounded-r-md hover:bg-gray-200 ${
+                                  stockLimits[item.productId] !== undefined && 
+                                  item.quantity >= stockLimits[item.productId] 
+                                    ? 'opacity-50 cursor-not-allowed' 
+                                    : ''
+                                }`}
+                                disabled={stockLimits[item.productId] !== undefined && item.quantity >= stockLimits[item.productId]}
                               >
                                 +
                               </button>
                             </div>
                             <div className="font-bold text-indigo-700">
-                              ${(item.price * item.quantity).toFixed(2)}
+                              ${item.subtotal.toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -177,6 +323,7 @@ function CartPage() {
                   <button
                     onClick={handleCheckout}
                     className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors mt-6"
+                    disabled={cartItems.length === 0}
                   >
                     Proceed to Checkout
                   </button>

@@ -41,6 +41,9 @@ function Navbar() {
             <Link to="/products" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
               Products
             </Link>
+            <Link to="/cart" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
+              Cart
+            </Link>
             {isLoggedIn ? (
               <>
                 {isAdmin && (
