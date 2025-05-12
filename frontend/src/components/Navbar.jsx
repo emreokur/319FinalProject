@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function Navbar() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin,    setIsAdmin]    = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const str = localStorage.getItem('user');
@@ -38,9 +38,9 @@ export default function Navbar() {
 
             {!isAdmin && (
               <>
-                <Link to="/about"    className="nav-link">About</Link>
+                <Link to="/about" className="nav-link">About</Link>
                 <Link to="/products" className="nav-link">Products</Link>
-                <Link to="/cart"     className="nav-link">Cart</Link>
+                <Link to="/cart" className="nav-link">Cart</Link>
               </>
             )}
 
@@ -49,7 +49,10 @@ export default function Navbar() {
             )}
 
             {isAdmin && (
-              <Link to="/admin" className="nav-link">Admin&nbsp;Dashboard</Link>
+              <>
+                <Link to="/admin" className="nav-link">Admin&nbsp;Dashboard</Link>
+                <Link to="/analytics" className="nav-link">Analytics</Link>
+              </>
             )}
 
             {isLoggedIn && (
