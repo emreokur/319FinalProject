@@ -53,6 +53,13 @@ export default function Navbar() {
                 <Link to="/admin" className="nav-link">Admin&nbsp;Dashboard</Link>
                 <Link to="/shipping" className="px-4 py-2 hover:text-gray-200">Shipping Estimate</Link>
                 <Link to="/analytics" className="nav-link">Analytics</Link>
+                <Link
+                  to="/admin/email"
+                  className="text-white hover:text-gray-200 transition-colors px-4 py-2"
+                >
+                  Send E‑mail
+                </Link>
+
               </>
             )}
 
