@@ -1,70 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+export default function Navbar() {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin,    setIsAdmin]    = useState(false);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      setIsLoggedIn(true);
+    const str = localStorage.getItem('user');
+    if (str) {
       try {
-        const userData = JSON.parse(userStr);
-        setIsAdmin(userData && userData.role === 'admin');
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+        const user = JSON.parse(str);
+        setIsLoggedIn(true);
+        setIsAdmin(user?.role === 'admin');
+      } catch (err) {
+        console.error('Bad user JSON:', err);
       }
-    } else {
-      setIsLoggedIn(false);
-      setIsAdmin(false);
     }
   }, []);
 
-  const handleLogout = () => {
+  function handleLogout() {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setIsAdmin(false);
     navigate('/auth');
-  };
+  }
 
   return (
-    <nav className="bg-blue-900 text-white fixed w-full z-10">
+    <nav className="fixed inset-x-0 top-0 z-10 bg-blue-900 text-white">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-        <Link to="/" className="font-bold text-xl">TheOnlyGoodCameraStore</Link>
-        <div className="flex space-x-4 items-center">
-            <Link to="/about" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
-              About
-            </Link>
-            <Link to="/products" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
-              Products
-            </Link>
-            <Link to="/cart" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
-              Cart
-            </Link>
-            {isLoggedIn ? (
+        <div className="flex items-center justify-between py-4">
+          <Link to="/" className="text-xl font-bold">
+            TheOnlyGoodCameraStore
+          </Link>
+
+          <div className="flex items-center space-x-4">
+
+            {!isAdmin && (
               <>
-                {isAdmin && (
-                  <Link to="/admin" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
-                    Admin Dashboard
-                  </Link>
-                )}
-                <Link to="/orders" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
-                  Orders
-                </Link>
-                <Link to="/account" className="text-white hover:text-gray-200 transition-colors px-4 py-2">
-                  My Account
-                </Link>
-                <button 
+                <Link to="/about"    className="nav-link">About</Link>
+                <Link to="/products" className="nav-link">Products</Link>
+                <Link to="/cart"     className="nav-link">Cart</Link>
+              </>
+            )}
+
+            {isLoggedIn && !isAdmin && (
+              <Link to="/orders" className="nav-link">Orders</Link>
+            )}
+
+            {isAdmin && (
+              <Link to="/admin" className="nav-link">Admin&nbsp;Dashboard</Link>
+            )}
+
+            {isLoggedIn && (
+              <>
+                <Link to="/account" className="nav-link">My&nbsp;Account</Link>
+                <button
                   onClick={handleLogout}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 transition-colors">
+                  className="rounded bg-red-600 px-4 py-2 hover:bg-red-500"
+                >
                   Logout
                 </button>
               </>
-            ) : (
-              <Link to="/auth" className="bg-indigo-700 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors">
+            )}
+
+            {!isLoggedIn && (
+              <Link
+                to="/auth"
+                className="rounded bg-indigo-700 px-4 py-2 hover:bg-indigo-600"
+              >
                 Login
               </Link>
             )}
@@ -75,4 +79,13 @@ function Navbar() {
   );
 }
 
-export default Navbar;
+function NavLink({ to, children }) {
+  return (
+    <Link
+      to={to}
+      className="nav-link"
+    >
+      {children}
+    </Link>
+  );
+}
