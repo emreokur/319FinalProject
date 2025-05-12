@@ -1,29 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from './Navbar';
+import Navbar from '../components/Navbar'; // adjust path as needed
 
-// Mock cart items (same as CartPage)
-const MOCK_CART_ITEMS = [
-  {
-    id: "1",
-    productId: "1",
-    name: "Professional DSLR Camera",
-    price: 1499.99,
-    quantity: 1,
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1000&auto=format&fit=crop",
-    seller: "Premium Camera Shop"
-  }
-];
+// API Base URL
+const BASE_URL = 'http://localhost:3000';
 
-function CheckoutPage() {
+export default function CheckoutPage() {
   const navigate = useNavigate();
-  const [cartItems] = useState(MOCK_CART_ITEMS);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
-  
-  // Form state
+
+  // Real cart loaded from backend
+  const [cartItems, setCartItems] = useState([]);
+  const [cartTotal, setCartTotal] = useState(0);
+
+  // Form / submission state
   const [formData, setFormData] = useState({
-    // Shipping info
     fullName: '',
     email: '',
     address: '',
@@ -31,354 +21,281 @@ function CheckoutPage() {
     state: '',
     zipCode: '',
     country: 'United States',
-    // Payment info
     cardName: '',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
   });
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
-  const calculateSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
+  // Fetch current user's cart
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!user) throw new Error('Not authenticated');
+        const userId = user._id || user.id || user.email;
 
-  const calculateTax = () => {
-    return calculateSubtotal() * 0.07; // 7% tax rate
-  };
-
-  const calculateShipping = () => {
-    return calculateSubtotal() > 1000 ? 0 : 15.99; // Free shipping over $1000
-  };
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax() + calculateShipping();
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    
-    // Clear error for this field when user types
-    if (formErrors[name]) {
-      setFormErrors({
-        ...formErrors,
-        [name]: null
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const errors = {};
-    
-    // Shipping info validation
-    if (!formData.fullName.trim()) errors.fullName = 'Full name is required';
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
-    }
-    if (!formData.address.trim()) errors.address = 'Address is required';
-    if (!formData.city.trim()) errors.city = 'City is required';
-    if (!formData.state.trim()) errors.state = 'State is required';
-    if (!formData.zipCode.trim()) errors.zipCode = 'ZIP code is required';
-    
-    // Payment info validation
-    if (!formData.cardName.trim()) errors.cardName = 'Name on card is required';
-    if (!formData.cardNumber.trim()) {
-      errors.cardNumber = 'Card number is required';
-    } else if (formData.cardNumber.replace(/\s/g, '').length !== 16) {
-      errors.cardNumber = 'Card number should be 16 digits';
-    }
-    if (!formData.expiryDate.trim()) {
-      errors.expiryDate = 'Expiry date is required';
-    } else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) {
-      errors.expiryDate = 'Please use format MM/YY';
-    }
-    if (!formData.cvv.trim()) {
-      errors.cvv = 'CVV is required';
-    } else if (!/^\d{3,4}$/.test(formData.cvv)) {
-      errors.cvv = 'CVV should be 3 or 4 digits';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      // Scroll to the first error
-      const firstError = document.querySelector('.error-message');
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const res = await fetch(`${BASE_URL}/api/cart`, {
+          headers: { 'UserId': userId }
+        });
+        if (!res.ok) throw new Error('Failed to load cart');
+        const { items, total } = await res.json();
+        setCartItems(items);
+        setCartTotal(total);
+      } catch (e) {
+        setLoadError(e.message);
       }
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      // In a real app, this would be an API call to create an order
-      // For now, we'll simulate a delay and then redirect
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Generate a random order ID for demo purposes
-      const orderId = Math.random().toString(36).substring(2, 10);
-      
-      // Redirect to order confirmation page
-      navigate(`/order/confirmation/${orderId}`);
-    } catch (error) {
-      console.error('Error placing order:', error);
-      setIsSubmitting(false);
+    };
+    loadCart();
+  }, []);
+
+  // Helpers for totals
+  const calcTax = () => cartTotal * 0.07;
+  const calcShipping = () => cartTotal > 1000 ? 0 : 15.99;
+  const calcGrandTotal = () => cartTotal + calcTax() + calcShipping();
+
+  // Controlled inputs
+  const handleChange = e => {
+    setFormData(f => ({ ...f, [e.target.name]: e.target.value }));
+    if (formErrors[e.target.name]) {
+      setFormErrors(f => ({ ...f, [e.target.name]: null }));
     }
   };
+
+  // Simple validation
+  const validate = () => {
+    const errs = {};
+    if (!formData.fullName.trim()) errs.fullName = 'Required';
+    if (!/\S+@\S+\.\S+/.test(formData.email)) errs.email = 'Invalid';
+    if (!formData.address) errs.address = 'Required';
+    ['city','state','zipCode'].forEach(field => {
+      if (!formData[field].trim()) errs[field] = 'Required';
+    });
+    if (!formData.cardName.trim()) errs.cardName = 'Required';
+    if (formData.cardNumber.replace(/\s+/g,'').length !== 16) errs.cardNumber = 'Must be 16 digits';
+    if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) errs.expiryDate = 'MM/YY';
+    if (!/^\d{3,4}$/.test(formData.cvv)) errs.cvv = '3 or 4 digits';
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  // Submit handler
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!validate()) return;
+    setIsSubmitting(true);
+
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user._id || user.id || user.email;
+
+      // Build payload
+      const payload = {
+        fullName:     formData.fullName,
+        email:        formData.email,
+        address:      formData.address,
+        city:         formData.city,
+        state:        formData.state,
+        zipCode:      formData.zipCode,
+        country:      formData.country,
+        items:        cartItems.map(i => ({
+          productId: i.productId,
+          name:      i.name,
+          price:     i.price,
+          quantity:  i.quantity,
+          subtotal:  i.quantity * i.price,
+          image:     i.image
+        })),
+        subtotal:     cartTotal,
+        tax:          calcTax(),
+        shippingCost: calcShipping(),
+        total:        calcGrandTotal()
+      };
+
+      // 1) Create order
+      const orderRes = await fetch(`${BASE_URL}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'UserId': userId
+        },
+        body: JSON.stringify(payload)
+      });
+      const orderJson = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderJson.message || 'Order failed');
+
+      // 2) Clear cart
+      await fetch(`${BASE_URL}/api/cart`, {
+        method: 'DELETE',
+        headers: { 'UserId': userId }
+      });
+
+      // 3) Navigate
+      navigate(`/order/confirmation/${orderJson.orderId}`);
+    } catch (err) {
+      setIsSubmitting(false);
+      alert(err.message || 'Error placing order');
+    }
+  };
+
+  if (loadError) {
+    return (
+      <>
+        <Navbar />
+        <div className="pt-16 p-8 text-red-600">Error loading cart: {loadError}</div>
+      </>
+    );
+  }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      {/* Add padding to push content below fixed navbar */}
-      <div className="pt-16"></div>
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Checkout</h1>
-        
-        <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-8">
-          {/* Shipping and Payment Forms */}
-          <div className="md:col-span-2 space-y-8">
-            {/* Shipping Information */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Shipping Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
-                <div className="col-span-2">
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.fullName && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.fullName}</p>}
-                </div>
-                
-                <div className="col-span-2">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.email && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.email}</p>}
-                </div>
-                
-                <div className="col-span-2">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                  <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.address ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.address && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.address}</p>}
-                </div>
-                
+      <div className="pt-16 max-w-5xl mx-auto px-4 py-8 grid md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 space-y-6">
+          <h1 className="text-2xl font-bold">Checkout</h1>
+
+          {/* Shipping & Payment Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <section className="bg-white p-6 rounded shadow">
+              <h2 className="mb-4 font-semibold">Shipping Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  ['fullName','Full Name'],
+                  ['email','Email'],
+                  ['address','Street Address']
+                ].map(([key,label]) => (
+                  <div key={key} className="col-span-2">
+                    <label className="block text-sm mb-1">{label}</label>
+                    <input
+                      name={key}
+                      value={formData[key]}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded ${
+                        formErrors[key] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {formErrors[key] && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors[key]}</p>
+                    )}
+                  </div>
+                ))}
+
+                {['city','state','zipCode'].map(field => (
+                  <div key={field}>
+                    <label className="block text-sm mb-1">
+                      {field.charAt(0).toUpperCase()+field.slice(1)}
+                    </label>
+                    <input
+                      name={field}
+                      value={formData[field]}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded ${
+                        formErrors[field] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {formErrors[field] && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors[field]}</p>
+                    )}
+                  </div>
+                ))}
+
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.city ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.city && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.city}</p>}
-                </div>
-                
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <input
-                    type="text"
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.state ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.state && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.state}</p>}
-                </div>
-                
-                <div>
-                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
-                  <input
-                    type="text"
-                    id="zipCode"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.zipCode && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.zipCode}</p>}
-                </div>
-                
-                <div>
-                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <label className="block text-sm mb-1">Country</label>
                   <select
-                    id="country"
                     name="country"
                     value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border rounded border-gray-300"
                   >
-                    <option value="United States">United States</option>
-                    <option value="Canada">Canada</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Australia">Australia</option>
+                    <option>United States</option>
+                    <option>Canada</option>
+                    <option>United Kingdom</option>
+                    <option>Australia</option>
                   </select>
                 </div>
               </div>
-            </div>
-            
-            {/* Payment Information */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Payment Information</h2>
+            </section>
+
+            <section className="bg-white p-6 rounded shadow">
+              <h2 className="mb-4 font-semibold">Payment Information</h2>
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 mb-1">Name on Card</label>
-                  <input
-                    type="text"
-                    id="cardName"
-                    name="cardName"
-                    value={formData.cardName}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.cardName ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.cardName && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.cardName}</p>}
-                </div>
-                
-                <div>
-                  <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-                  <input
-                    type="text"
-                    id="cardNumber"
-                    name="cardNumber"
-                    placeholder="XXXX XXXX XXXX XXXX"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    className={`w-full p-2 border rounded-md ${formErrors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {formErrors.cardNumber && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.cardNumber}</p>}
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (MM/YY)</label>
+                {[
+                  ['cardName','Name on Card'],
+                  ['cardNumber','Card Number'],
+                  ['expiryDate','Expiry Date (MM/YY)'],
+                  ['cvv','CVV']
+                ].map(([key,label]) => (
+                  <div key={key}>
+                    <label className="block text-sm mb-1">{label}</label>
                     <input
-                      type="text"
-                      id="expiryDate"
-                      name="expiryDate"
-                      placeholder="MM/YY"
-                      value={formData.expiryDate}
-                      onChange={handleInputChange}
-                      className={`w-full p-2 border rounded-md ${formErrors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
+                      name={key}
+                      value={formData[key]}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded ${
+                        formErrors[key] ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     />
-                    {formErrors.expiryDate && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.expiryDate}</p>}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                    <input
-                      type="text"
-                      id="cvv"
-                      name="cvv"
-                      placeholder="123"
-                      value={formData.cvv}
-                      onChange={handleInputChange}
-                      className={`w-full p-2 border rounded-md ${formErrors.cvv ? 'border-red-500' : 'border-gray-300'}`}
-                    />
-                    {formErrors.cvv && <p className="text-red-500 text-sm mt-1 error-message">{formErrors.cvv}</p>}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span className="ml-2 text-sm text-gray-500">All transactions are secure and encrypted.</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Order Summary */}
-          <div className="md:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 sticky top-24">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Order Summary</h2>
-              
-              <div className="space-y-4 mb-6">
-                {cartItems.map(item => (
-                  <div key={item.id} className="flex justify-between pb-4 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    {formErrors[key] && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors[key]}</p>
+                    )}
                   </div>
                 ))}
+                <p className="text-gray-500 text-sm flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" 
+                       viewBox="0 0 24 24"><path strokeLinecap="round" 
+                       strokeLinejoin="round" strokeWidth={2} 
+                       d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 
+                       00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 
+                       2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  All transactions are secure and encrypted.
+                </p>
               </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">${calculateSubtotal().toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">
-                    {calculateShipping() === 0 ? 'Free' : `$${calculateShipping().toFixed(2)}`}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tax (7%)</span>
-                  <span className="font-medium">${calculateTax().toFixed(2)}</span>
-                </div>
-                <div className="pt-4 mt-2 border-t border-gray-200 flex justify-between">
-                  <span className="text-base font-bold">Total</span>
-                  <span className="text-base font-bold text-indigo-700">${calculateTotal().toFixed(2)}</span>
-                </div>
-              </div>
-              
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`mt-6 w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : 'Place Order'}
-              </button>
+            </section>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full py-3 text-white rounded ${
+                isSubmitting ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              {isSubmitting ? 'Processing…' : 'Place Order'}
+            </button>
+          </form>
+        </div>
+
+        {/* Order Summary */}
+        <aside className="bg-white p-6 rounded shadow space-y-4 sticky top-20">
+          <h2 className="font-semibold">Order Summary</h2>
+          {cartItems.map(item => (
+            <div key={item.productId} className="flex justify-between">
+              <span>{item.name} × {item.quantity}</span>
+              <span>${(item.price * item.quantity).toFixed(2)}</span>
             </div>
+          ))}
+          <hr />
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span>${cartTotal.toFixed(2)}</span>
           </div>
-        </form>
+          <div className="flex justify-between">
+            <span>Tax (7%)</span>
+            <span>${calcTax().toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Shipping</span>
+            <span>{calcShipping() === 0 ? 'Free' : `$${calcShipping().toFixed(2)}`}</span>
+          </div>
+          <hr />
+          <div className="flex justify-between font-bold">
+            <span>Total</span>
+            <span>${calcGrandTotal().toFixed(2)}</span>
+          </div>
+        </aside>
       </div>
     </div>
   );
 }
-
-export default CheckoutPage; 
