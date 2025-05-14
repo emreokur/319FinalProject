@@ -163,15 +163,7 @@ export default function OrderManagementPage() {
                     </button>
                   )}
 
-                  {/* Return request if shipped but not yet requested */}
-                  {shipped && !returned && !cancelled && (
-                    <button
-                      onClick={() => handleReturn(order._id)}
-                      className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-                    >
-                      Request Return
-                    </button>
-                  )}
+
                 </div>
               </div>
             );

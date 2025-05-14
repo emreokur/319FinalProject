@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './Navbar';
-// import { fetchOrders, updateOrderStatus, deleteOrder } from './services/orderService';
 
 function OrderManagementPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fake data
   const mockOrders = [
     {
       id: 'cm96i27w',

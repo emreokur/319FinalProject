@@ -594,7 +594,7 @@ function AdminDashboard() {
                     <tr>
                       {[
                         'ID', 'Customer', 'Total',
-                        'Received', 'Packed', 'Shipped', 'Delivered', 'Actions'
+                        'Received', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Actions'
                       ].map(h => (
                         <th
                           key={h}
@@ -657,6 +657,18 @@ function AdminDashboard() {
                                 />
                               </td>
                             ))}
+
+                            <td className="px-4 py-2">
+                              <input
+                                type="checkbox"
+                                checked={status.cancelled?.completed}
+                                readOnly
+                                disabled
+                                className={status.cancelled?.completed ? "accent-red-600 cursor-not-allowed" : "cursor-not-allowed"}
+s
+                              />
+                            </td>
+
                             <td className="px-4 py-2 text-sm">
                               <button
                                 onClick={del}
