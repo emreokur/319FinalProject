@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 function AuthPage() {
   const [activeTab, setActiveTab] = useState('login');
@@ -311,6 +312,7 @@ function AuthPage() {
           )}
         </div>
       </div>
+      <Footer />
     </>
   );
 }

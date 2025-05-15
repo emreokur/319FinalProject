@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 function AccountPage() {
   const BASE_URL = 'http://localhost:3000';
@@ -163,6 +164,7 @@ function AccountPage() {
         <div className="flex justify-center items-center min-h-screen pt-16">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
+        <Footer />
       </>
     );
   }
@@ -310,6 +312,7 @@ function AccountPage() {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 }

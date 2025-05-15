@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -193,6 +194,7 @@ function ProductsPage() {
           </>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

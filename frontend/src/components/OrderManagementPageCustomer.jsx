@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 export default function OrderManagementPage() {
   const [orders, setOrders]     = useState([]);
@@ -170,6 +171,7 @@ export default function OrderManagementPage() {
           })}
         </div>
       </main>
+      <Footer />
     </>
   );
 }

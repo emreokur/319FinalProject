@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar'; // adjust path as needed
+import Footer from './Footer';
 
 // API Base URL
 const BASE_URL = 'http://localhost:3000';
@@ -146,6 +147,7 @@ export default function CheckoutPage() {
       <>
         <Navbar />
         <div className="pt-16 p-8 text-red-600">Error loading cart: {loadError}</div>
+        <Footer />
       </>
     );
   }
@@ -296,6 +298,7 @@ export default function CheckoutPage() {
           </div>
         </aside>
       </div>
+      <Footer />
     </div>
   );
 }

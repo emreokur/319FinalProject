@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 // API Base URL
 const BASE_URL = 'http://localhost:3000';
@@ -333,6 +334,7 @@ function CartPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import Navbar from './Navbar';
+import Footer from './Footer';
 import Asray from '../assets/asray.JPG';
 import Emre from '../assets/emre.jpg';
 import AskQuestion from './AskQuestion';
@@ -59,6 +60,7 @@ function AboutPage() {
       <AskQuestion />
 
       </main>
+      <Footer />
     </>
   );
 }

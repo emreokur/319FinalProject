@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 export default function OrderConfirmationPage() {
   const { orderId } = useParams();
@@ -50,6 +51,7 @@ export default function OrderConfirmationPage() {
     <>
       <Navbar />
       <div className="pt-16 text-center">Loading your order…</div>
+      <Footer />
     </>
   );
 
@@ -60,6 +62,7 @@ export default function OrderConfirmationPage() {
         <p>Error loading order: {error}</p>
         <Link to="/orders" className="text-indigo-600 hover:underline">Back to My Orders</Link>
       </div>
+      <Footer />
     </>
   );
 
@@ -133,6 +136,7 @@ export default function OrderConfirmationPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

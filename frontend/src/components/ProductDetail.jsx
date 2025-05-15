@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -155,6 +156,7 @@ function ProductDetail() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           <p className="ml-4 text-gray-600">Loading product details...</p>
         </div>
+        <Footer />
       </>
     );
   }
@@ -176,6 +178,7 @@ function ProductDetail() {
             Back to Products
           </Link>
         </div>
+        <Footer />
       </>
     );
   }
@@ -319,6 +322,7 @@ function ProductDetail() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
