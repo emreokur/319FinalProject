@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,7 +36,19 @@ function ProductsPage() {
     setSortBy(e.target.value);
   };
 
-  const sortedProducts = [...products].sort((a, b) => {
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Filter products by search query
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.seller?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Sort filtered products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case "newest":
         return new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime();
@@ -91,6 +104,8 @@ function ProductsPage() {
                   type="text"
                   placeholder="Search products..."
                   className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 px-4 text-gray-700"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
                 />
                 <button className="ml-2 p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +137,7 @@ function ProductsPage() {
               <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
                 <h3 className="text-lg font-medium text-gray-900">No products found</h3>
                 <p className="mt-1 text-gray-600">
-                  Check back soon for new listings or try changing your filters.
+                  {searchQuery ? `No results matching "${searchQuery}". Try a different search term.` : 'Check back soon for new listings or try changing your filters.'}
                 </p>
               </div>
             ) : (
