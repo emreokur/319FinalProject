@@ -3,7 +3,7 @@ const router  = express.Router();
 const { Resend } = require('resend');
 
 const resend = new Resend(
-  process.env.RESEND_API_KEY || 're_SHQTTiRE_LEYEQTMZN1B2d6spr4QmhAqJ'
+  process.env.RESEND_API_KEY
 );
 
 const isAuthenticated = (req, res, next) => {
